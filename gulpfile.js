@@ -29,6 +29,13 @@ var APPPATH = {
   fonts: 'app/fonts',
   img: 'app/img'
 };
+var DOCPATH = {
+  root: 'docs/',
+  css: 'docs/css',
+  js: 'docs/js',
+  fonts: 'docs/fonts',
+  img: 'docs/img'
+}
 
 gulp.task('clean-html', function(){
   return gulp.src(APPPATH.root + '/*.html', {read: false, force: true})
@@ -75,7 +82,7 @@ gulp.task('compress', function () {
     .pipe(concat('main.js'))
     .pipe(browserify())
     .pipe(minify())
-    .pipe(gulp.dest(APPPATH.js));
+    .pipe(gulp.dest(DOCPATH.js));
 });
 
 gulp.task('compresscss', function () {
@@ -85,16 +92,21 @@ gulp.task('compresscss', function () {
   .pipe(sass({outputstyle: 'expanded'}).on('error', sass.logError))
   return merge(sassFiles, bootStrapCss)
     .pipe(concat( 'app.css'))
-    .pipe(cssmin())
-    .pipe(rename({suffix: '.min'}))
-    .pipe(gulp.dest(APPPATH.css));
+    .pipe(gulp.dest(DOCPATH.css));
 });
 
 gulp.task('minifyHtml', function () {
   return gulp.src(SOURCEPATHS.htmlSource)
  .pipe(injectPartials())
  .pipe(htmlmin({collapseWhitespace: true}))
-  .pipe(gulp.dest(APPPATH.root));
+  .pipe(gulp.dest(DOCPATH.root));
+});
+
+gulp.task('imagesmin', function () {
+  return gulp.src(SOURCEPATHS.imgSource)
+  .pipe(newer(DOCPATH.img))
+  .pipe(imagemin())
+  .pipe(gulp.dest(DOCPATH.img));
 });
 
 /** End of PRODUCTION TASKS **/
@@ -125,6 +137,15 @@ gulp.task('watch', ['serve', 'sass', 'clean-html','html', 'clean-scripts', 'scri
   gulp.watch([SOURCEPATHS.htmlSource, SOURCEPATHS.htmlPartialSource], ['html']);
 });
 
+gulp.task('serve1', ['sass'], function () {
+  browserSync.init([DOCPATH.css + '/*.css', DOCPATH.root + '/*.html', DOCPATH.js + '/*.js'], {
+    server: {
+      baseDir: DOCPATH.root
+    }
+  })
+});
+
+
 gulp.task('default', ['watch']);
 
-gulp.task('production', ['minifyHtml', 'compresscss', 'compress']);
+gulp.task('production', [ 'serve1', 'compresscss', 'minifyHtml', 'compress','imagesmin']);
